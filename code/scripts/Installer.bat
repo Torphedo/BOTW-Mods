@@ -6,8 +6,7 @@ echo.
 echo.
 echo      1. Install BCML
 echo      2. Create BCML Shortcut
-echo      3. Download Cemu
-echo      4. Exit
+echo      3. Exit
 echo.
 echo.
 set /P selection="Enter the number of your selection:"
@@ -21,6 +20,7 @@ cls
 goto :start
 
 :case_1
+rem This the easy part, just installing everything
 echo Starting BCML Installation...
 echo Installing Visual C++...
 curl -L -s -o vc_redist.x64.exe https://aka.ms/vs/16/release/vc_redist.x64.exe
@@ -33,45 +33,31 @@ python-3.8.10-amd64.exe /quiet InstallAllUsers=1 DefaultAllUsersTargetDir=C:\Pyt
 del python-3.8.10-amd64.exe
 echo Installing BCML...
 py -3.8 -m pip install bcml -q
+pip install cefpython3
+rem Intentionally falls into the shortcut code because option 1 does both
 
 :case_2
 echo Creating BCML Shortcut...
+
+rem This code is a sin burn it with fire please
+rem fuck batch, this is so overcomplicated
+echo import shutil > path.py
+echo path = shutil.which("pythonw") >> path.py
+echo print(path) >> path.py
+
+for /f %%f in ('path.py') do (set pywpath=%%f)
+del path.py
+set pyfolder=%pywpath:\pythonw.EXE=\%
+
 curl -s -o Shortcut.zip https://web.archive.org/web/20200530144108/http://optimumx.com/download/Shortcut.zip
-curl -s -o %USERPROFILE%/bcml.ico https://raw.githubusercontent.com/NiceneNerd/BCML/master/bcml/data/bcml.ico
 powershell -command "Expand-Archive Shortcut.zip ." > NUL
 del Shortcut.zip
 del ReadMe.txt
-Shortcut.exe /A:C /T:"pyw" /P:" -3.8 -m bcml" /I:"%USERPROFILE%\bcml.ico" /F:BCML.lnk > NUL
+Shortcut.exe /A:C /T:%pywpath% /P:"-m bcml" /I:"%pyfolder%Lib\site-packages\bcml\data\bcml.ico" /F:BCML.lnk > NUL
+Shortcut.exe /A:C /T:%pyfolder%python.exe /P:"-m pip install -U bcml" /I:"%pyfolder%Lib\site-packages\bcml\data\bcml.ico" /F:"Update BCML.lnk" > NUL
 del Shortcut.exe
 echo BCML Shortcut Created.
 pause
-exit
 
 :case_3
-echo Downloading Cemu...
-curl -L -s -o cemu-latest.zip https://cemu.info/api/cemu_latest.php
-powershell -command "Expand-Archive cemu-latest.zip temp6275"
-del cemu-latest.zip
-for /d %%a in ("temp6275\*") do (
-  rename "%%~fa" Cemu
-)
-move temp6275\Cemu . > NUL
-rmdir temp6275
-echo Downloading CemuHook...
-curl -L -s -o cemuhook.zip https://files.sshnuke.net/cemuhook_1251c_0575.zip
-powershell -command "Expand-Archive cemuhook.zip Cemu"
-del cemuhook.zip
-echo Downloading Graphics Packs...
-for /f "tokens=1,* delims=:" %%A in ('curl -ks https://api.github.com/repos/ActualMandM/cemu_graphic_packs/releases/latest ^| find "browser_download_url"') do (
-    curl -kL -s -o gfx-packs-latest.zip %%B
-)
-powershell -command "Expand-Archive gfx-packs-latest.zip Cemu\graphicPacks\downloadedGraphicPacks"
-del gfx-packs-latest.zip
-cls
-echo Cemu Installation Complete.
-echo Remember to upate your Cemu and graphics packs occasionally!
-pause
-exit
-
-:case_4
 exit
